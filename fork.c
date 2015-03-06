@@ -1833,8 +1833,9 @@ long do_fork(unsigned long clone_flags,
 		time_in_do_fork += total.tv_nsec;
 		nr_forks++;
 		if (nr_forks == 100) {
-			printk(KERN_INFO "time in do_fork: %lu ns\n", time_in_do_fork);
+			printk(KERN_INFO "time in do_fork: %lu ns, cache_time: %lu ns\n", time_in_do_fork, cache_time);
 			time_in_do_fork = 0;
+			cache_time = 0;
 			nr_forks = 0;
 		}
 	}
