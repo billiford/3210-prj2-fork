@@ -95,6 +95,8 @@ unsigned long total_forks;	/* Handle normal Linux uptimes. */
 unsigned long nr_forks;	/* For Matrix time analysis. */
 unsigned long time_in_do_fork; /* For Matrix time analysis. */
 unsigned long cache_time; /* For MAtrix time analysis. */
+unsigned long cache_array[10];
+unsigned long kernel_array[10];
 int nr_threads;			/* The idle threads do not count.. */
 
 int max_threads;		/* tunable limit on nr_threads */
@@ -1764,6 +1766,7 @@ long do_fork(unsigned long clone_flags,
 	struct timespec start, end, total;
 	struct task_struct *p;
 	int trace = 0;
+	int i;
 	long nr;
 	
 	if (!strcmp(current->comm, "Matrix"))
@@ -1832,11 +1835,23 @@ long do_fork(unsigned long clone_flags,
 		total = timespec_sub(end, start);
 		time_in_do_fork += total.tv_nsec;
 		nr_forks++;
-		if (nr_forks == 100) {
-			printk(KERN_INFO "time in do_fork: %lu ns, cache_time: %lu ns\n", time_in_do_fork, cache_time);
-			time_in_do_fork = 0;
+		if (nr_forks % 10 == 0) {
+			cache_array[nr_forks / 10 - 1] = cache_time;
+			kernel_array[nr_forks / 10 - 1] = time_in_do_fork;
 			cache_time = 0;
-			nr_forks = 0;
+			time_in_do_fork = 0;
+			if (nr_forks == 100) {
+				printk(KERN_INFO "kernel (pthread_create): %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu\ncache (pthread_create) %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu\n", 
+						kernel_array[0], kernel_array[1], kernel_array[2], kernel_array[3],	kernel_array[4],
+						kernel_array[5], kernel_array[6], kernel_array[7], kernel_array[8],	kernel_array[9],
+						cache_array[0], cache_array[1], cache_array[2], cache_array[3], cache_array[4],
+						cache_array[5], cache_array[6], cache_array[7], cache_array[8], cache_array[9]);
+				nr_forks = 0;
+				for (i = 0; i < 10; i++) {
+					kernel_array[i] = 0;
+					cache_array[i] = 0;
+				}
+			}
 		}
 	}
 
